@@ -49,21 +49,19 @@
    */
   function setGoodsDataIntoTable() {
     $link = new mysqli('localhost', 'root', '123456', 'mydb');
-    $sql = '';
     if ($_POST['id']) {
-      updateData($sql, $link);
+      updateData($link);
     } else {
-      insertData($sql, $link);
+      insertData($link);
     }
   }
 
   /**
    * 接收的参数没有id，那么就是新录入的
    * 执行插入语句
-   * params $sql要执行的sql语句
    * params $link已经链接的数据库
    */
-  function insertData($sql, $link) {
+  function insertData($link) {
     $sql = 'insert into goods (name, purchase_price, sale_price, description, img_url_list_str)
       values("'.$_POST['name'].'",'.$_POST['inComePrice'].','.$_POST['salePrice'].',"'.$_POST['description'].'","'.$GLOBALS["urlListStr"].'")';
     if ($link->connect_errno == 0) {
@@ -71,7 +69,7 @@
         $GLOBALS['res']['errNo'] = 502;
         $GLOBALS['res']['errStr'] = '数据插入失败';
       } else {
-        $GLOBALS['res']['data'] = $GLOBALS['picUrlList'];
+        $GLOBALS['res']['data']['urlList'] = $GLOBALS['picUrlList'];
       }
     } else {
       $GLOBALS['res']['errNo'] = 501;
@@ -82,11 +80,57 @@
   /**
    * 接收的参数有id，那么就是更新数据
    * 执行更新语句
-   * params $sql要执行的sql语句
    * params $link已经链接的数据库
    */
-  function updateData($sql, $link){
-    echo '666';
+  function updateData($link){
+    // 查询sql
+    $selectSql = 'select name,purchase_price,sale_price,description,img_url_list_str from goods where id='.$GLOBALS['id'];
+    if ($link->connect_errno == 0) {
+      $res = $link->query($selectSql);
+      if(!$res){
+        $GLOBALS['res']['errNo'] = 502;
+        $GLOBALS['res']['errStr'] = '数据查询失败';
+      } else {
+        $rows = $res->fetch_row();
+        // 没有查到数据
+        if (!count($rows)) {
+          $GLOBALS['res']['errNo'] = 503;
+          $GLOBALS['res']['errStr'] = '请检查id是否正确！id不存在';
+        } else {
+          // 查询成功，格列的值
+          $name_row = $rows[0];
+          $purchase_price_row = $rows[1];
+          $sale_price_row = $rows[2];
+          $description_row = $rows[3];
+          $img_url_list_str_row = $rows[4];
+
+          // 要更新的值
+          $update_name = $GLOBALS['name'] ? $GLOBALS['name'] : $name_row;
+          $update_purchase_price = $GLOBALS['inComePrice'] ? $GLOBALS['inComePrice'] : $purchase_price_row;
+          $update_sale_price = $GLOBALS['salePrice'] ? $GLOBALS['salePrice'] : $sale_price_row;
+          $update_description = $GLOBALS['description'] ? $GLOBALS['description'] : $description_row;
+          $update_img_url_list_str = $img_url_list_str_row ? $img_url_list_str_row.';'.$GLOBALS['urlListStr'] : $GLOBALS['urlListStr'];
+
+          // 更新sql
+          $updateSql = 'update goods set name="'.$update_name.
+                '",purchase_price='.$update_purchase_price.
+                ',sale_price='.$update_sale_price.
+                ',description="'.$update_description.
+                '",img_url_list_str="'.$update_img_url_list_str.
+                '" where id='.$GLOBALS['id'];
+          // 更新失败
+          if (!$link->query($updateSql)) {
+            $GLOBALS['res']['errNo'] = 502;
+            $GLOBALS['res']['errStr'] = '数据更新失败';
+          } else {
+            $GLOBALS['res']['data']['urlList'] = $GLOBALS['picUrlList'];
+          }
+        }
+      }
+    } else {
+      $GLOBALS['res']['errNo'] = 501;
+      $GLOBALS['res']['errStr'] = '数据库链接失败';
+    }
   }
 
   savePicEchoUrl();

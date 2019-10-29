@@ -11,7 +11,7 @@
   function selectRecommond() {
     $link = new mysqli('localhost', 'root', '123456', 'mydb');
     if ($link->connect_errno == 0) {
-      $selectSql = 'select id,img_url_list_str,description from goods';
+      $selectSql = 'select id,img_url_list_str,description,name from goods';
       $res = $link->query($selectSql);
       if (!$link->query($selectSql)) {
         $GLOBALS['res']['errNo'] = 502;
@@ -27,7 +27,8 @@
           $printData[$i] = array(
             'id' => $rows[$i][0],
             'img' => $ele,
-            'content' => $rows[$i][2]
+            'content' => $rows[$i][2],
+            'name' => $rows[$i][3]
           );
         }
         $GLOBALS['res']['data']['recommondList'] = $printData;
